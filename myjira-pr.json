@@ -8,7 +8,7 @@
         "azure": {
             "subscriptionId": "your-subscription-id",
             "resourceGroup": "your-resource-group",
-            "location": "eastus"
+            "location": "west us"
         }
     }
 }
