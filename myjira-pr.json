@@ -1,0 +1,14 @@
+{
+    "onboarding": {
+        "user": {
+            "username": "newuser",
+            "email": "newuser@example.com",
+            "role": "Contributor"
+        },
+        "azure": {
+            "subscriptionId": "your-subscription-id",
+            "resourceGroup": "your-resource-group",
+            "location": "eastus"
+        }
+    }
+}
