@@ -17,6 +17,22 @@ jobs:
         with:
           terraform_version: 1.9.5
 
+      - name: Debug Secrets
+        run: |
+          if [ -z "${{ secrets.AZURE_CLIENT_ID }}" ]; then
+            echo "::error::AZURE_CLIENT_ID secret is NOT available."
+            exit 1
+          else
+            echo "AZURE_CLIENT_ID secret is available."
+          fi
+          
+          if [ -z "${{ secrets.AZURE_TENANT_ID }}" ]; then
+            echo "::error::AZURE_TENANT_ID secret is NOT available."
+            exit 1
+          else
+            echo "AZURE_TENANT_ID secret is available."
+          fi
+
       - name: Terraform Init
         working-directory: ./
         run: terraform init
