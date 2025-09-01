@@ -1,0 +1,49 @@
+name: Provision Azure User
+
+on:
+  repository_dispatch:
+    types: [create_azure_user]
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.5
+
+      - name: Terraform Init
+        working-directory: ./
+        run: terraform init
+
+      - name: Terraform Apply
+        working-directory: ./
+        run: |
+          terraform apply -auto-approve \
+            -var="user_display_name=${{ github.event.client_payload.user_display_name }}" \
+            -var="user_alias=${{ github.event.client_payload.user_alias }}" \
+            -var="domain=${{ github.event.client_payload.domain }}" \
+            -var="client_id=${{ secrets.AZURE_CLIENT_ID }}" \
+            -var="client_secret=${{ secrets.AZURE_CLIENT_SECRET }}" \
+            -var="tenant_id=${{ secrets.AZURE_TENANT_ID }}"
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+
+      - name: Output results
+        run: terraform output -json > tf_output.json
+
+      - name: Post back to Jira
+        run: |
+          UPN=$(jq -r '.new_user_upn.value' tf_output.json)
+          TEMP_PASS=$(jq -r '.temporary_password.value' tf_output.json)
+          curl -u ${{ secrets.JIRA_USER_EMAIL }}:${{ secrets.JIRA_API_TOKEN }} \
+            -X POST \
+            --data "{\"body\": \"✅ User Created: ${UPN}\n🔑 Temporary Password: ${TEMP_PASS}\"}" \
+            -H "Content-Type: application/json" \
+            https://yourcompany.atlassian.net/rest/api/3/issue/${{ github.event.client_payload.jira_issue_key }}/comment
