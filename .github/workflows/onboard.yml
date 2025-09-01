@@ -2,7 +2,7 @@ name: Provision Azure User
 
 on:
   repository_dispatch:
-    types: [onboar_user]
+    types: [onboard_user]
 
 jobs:
   provision:
