@@ -7,6 +7,7 @@ on:
 jobs:
   provision:
     runs-on: ubuntu-latest
+    environment: dev
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -27,13 +28,11 @@ jobs:
             -var="user_display_name=${{ github.event.client_payload.user_display_name }}" \
             -var="user_alias=${{ github.event.client_payload.user_alias }}" \
             -var="domain=${{ github.event.client_payload.domain }}" \
-            -var="client_id=${{ secrets.AZURE_CLIENT_ID }}" \
-            -var="client_secret=${{ secrets.AZURE_CLIENT_SECRET }}" \
-            -var="tenant_id=${{ secrets.AZURE_TENANT_ID }}"
+
         env:
-          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          TF_VAR_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+          TF_VAR_client_secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          TF_VAR_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
 
       - name: Output results
         run: terraform output -json > tf_output.json
