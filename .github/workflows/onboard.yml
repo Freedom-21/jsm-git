@@ -14,46 +14,31 @@ jobs:
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.9.5
-
-      - name: Debug Secrets
-        run: |
-          if [ -z "${{ secrets.AZURE_CLIENT_ID }}" ]; then
-            echo "::error::AZURE_CLIENT_ID secret is NOT available."
-            exit 1
-          else
-            echo "AZURE_CLIENT_ID secret is available."
-          fi
-          
-          if [ -z "${{ secrets.AZURE_TENANT_ID }}" ]; then
-            echo "::error::AZURE_TENANT_ID secret is NOT available."
-            exit 1
-          else
-            echo "AZURE_TENANT_ID secret is available."
-          fi
 
       - name: Terraform Init
-        working-directory: ./
         run: terraform init
 
       - name: Terraform Apply
-        working-directory: ./
-        run: |
-          terraform apply -auto-approve \
-            -var="user_display_name=${{ github.event.client_payload.user_display_name }}" \
-            -var="user_alias=${{ github.event.client_payload.user_alias }}" \
-            -var="domain=${{ github.event.client_payload.domain }}" \
-
+        # This 'env' block makes the secrets available as environment variables for this step ONLY.
+        # Terraform automatically looks for environment variables prefixed with TF_VAR_
+        # and uses them to populate its input variables.
         env:
           TF_VAR_client_id: ${{ secrets.AZURE_CLIENT_ID }}
           TF_VAR_client_secret: ${{ secrets.AZURE_CLIENT_SECRET }}
           TF_VAR_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+        run: |
+          # Notice the credentials are NO LONGER passed in the command itself.
+          # Terraform will find them in the environment variables.
+          terraform apply -auto-approve \
+            -var="user_display_name=${{ github.event.client_payload.user_display_name }}" \
+            -var="user_alias=${{ github.event.client_payload.user_alias }}" \
+            -var="domain=${{ github.event.client_payload.domain }}"
 
       - name: Output results
         run: terraform output -json > tf_output.json
 
       - name: Post back to Jira
+        # The Jira secrets are still needed here, of course.
         run: |
           UPN=$(jq -r '.new_user_upn.value' tf_output.json)
           TEMP_PASS=$(jq -r '.temporary_password.value' tf_output.json)
