@@ -1,8 +1,3 @@
-# variable "tenant_id" {
-#   type        = string
-#   description = "Tenant ID of your Entra directory"
-# }
-
 variable "domain" {
   type        = string
   default     = "yenesewfreedom8gmail.onmicrosoft.com"
