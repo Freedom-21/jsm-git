@@ -7,7 +7,8 @@ on:
 jobs:
   provision:
     runs-on: ubuntu-latest
-    environment: dev
+    # REMOVED a single line here: "environment: dev"
+    # This job will now use Repository Secrets by default.
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -19,16 +20,15 @@ jobs:
         run: terraform init
 
       - name: Terraform Apply
-        # This 'env' block makes the secrets available as environment variables for this step ONLY.
-        # Terraform automatically looks for environment variables prefixed with TF_VAR_
-        # and uses them to populate its input variables.
+        # This is the most reliable way to pass secrets to Terraform.
+        # It reads them from the repository secrets and sets them as 
+        # environment variables for this step.
         env:
           TF_VAR_client_id: ${{ secrets.AZURE_CLIENT_ID }}
           TF_VAR_client_secret: ${{ secrets.AZURE_CLIENT_SECRET }}
           TF_VAR_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
         run: |
-          # Notice the credentials are NO LONGER passed in the command itself.
-          # Terraform will find them in the environment variables.
+          # The command remains clean, with credentials handled by the 'env' block.
           terraform apply -auto-approve \
             -var="user_display_name=${{ github.event.client_payload.user_display_name }}" \
             -var="user_alias=${{ github.event.client_payload.user_alias }}" \
@@ -38,7 +38,6 @@ jobs:
         run: terraform output -json > tf_output.json
 
       - name: Post back to Jira
-        # The Jira secrets are still needed here, of course.
         run: |
           UPN=$(jq -r '.new_user_upn.value' tf_output.json)
           TEMP_PASS=$(jq -r '.temporary_password.value' tf_output.json)
