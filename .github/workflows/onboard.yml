@@ -45,4 +45,4 @@ jobs:
             -X POST \
             --data "{\"body\": \"✅ User Created: ${UPN}\n🔑 Temporary Password: ${TEMP_PASS}\"}" \
             -H "Content-Type: application/json" \
-            https://yourcompany.atlassian.net/rest/api/3/issue/${{ github.event.client_payload.jira_issue_key }}/comment
+            https://freedom21.atlassian.net/rest/api/3/issue/${{ github.event.client_payload.jira_issue_key }}/comment
