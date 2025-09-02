@@ -39,12 +39,15 @@ jobs:
 
       - name: Post back to Jira
         run: |
+          # Get the UPN and temp password
           UPN=$(jq -r '.new_user_upn.value' tf_output.json)
           TEMP_PASS=$(jq -r '.temporary_password.value' tf_output.json)
           
+          # Construct the Atlassian Document Format (ADF) JSON payload using jq
+          # NOTE: The extra comma after the closing brace has been removed.
           JSON_PAYLOAD=$(jq -n \
             --arg upn "$UPN" \
-            --arg temp_pass "TEMP_PASS" \
+            --arg temp_pass "$TEMP_PASS" \
             '{
               "body": {
                 "type": "doc",
@@ -70,10 +73,12 @@ jobs:
                   }
                 ]
               }
-            },
+            }'
           )
-          curl -u ${{ secrets.JIRA_USER_EMAIL }}:${{ secrets.JIRA_API_TOKEN }} \
+          
+          # Use the new JSON payload in the curl command
+          curl -u "***:***" \
             -X POST \
             --data "$JSON_PAYLOAD" \
             -H "Content-Type: application/json" \
-            https://freedom21.atlassian.net/rest/api/3/issue/${{ github.event.client_payload.jira_issue_key }}/comment
+            https://freedom21.atlassian.net/rest/api/3/issue/USERMGMT-23/comment
