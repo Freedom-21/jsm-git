@@ -41,8 +41,39 @@ jobs:
         run: |
           UPN=$(jq -r '.new_user_upn.value' tf_output.json)
           TEMP_PASS=$(jq -r '.temporary_password.value' tf_output.json)
+          
+          JSON_PAYLOAD=$(jq -n \
+            --arg upn "$UPN" \
+            --arg temp_pass "TEMP_PASS" \
+            '{
+              "body": {
+                "type": "doc",
+                "version": 1,
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "text": "✅ User Created: \($upn)",
+                        "type": "text"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "text": "🔑 Temporary Password: \($temp_pass)",
+                        "type": "text"
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+          )
           curl -u ${{ secrets.JIRA_USER_EMAIL }}:${{ secrets.JIRA_API_TOKEN }} \
             -X POST \
-            --data "{\"body\": \"✅ User Created: ${UPN}\n🔑 Temporary Password: ${TEMP_PASS}\"}" \
+            --data "$JSON_PAYLOAD" \
             -H "Content-Type: application/json" \
             https://freedom21.atlassian.net/rest/api/3/issue/${{ github.event.client_payload.jira_issue_key }}/comment
