@@ -81,4 +81,4 @@ jobs:
             -X POST \
             --data "$JSON_PAYLOAD" \
             -H "Content-Type: application/json" \
-            https://freedom21.atlassian.net/rest/api/3/issue/USERMGMT-23/comment
+            "https://freedom21.atlassian.net/rest/api/3/issue/${{ github.event.client_payload.jira_issue_key }}/comment"
