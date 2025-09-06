@@ -30,9 +30,10 @@ jobs:
         run: |
           # The command remains clean, with credentials handled by the 'env' block.
           terraform apply -auto-approve \
-            -var="user_display_name=${{ github.event.client_payload.user_display_name }}" \
-            -var="user_alias=${{ github.event.client_payload.user_alias }}" \
-            -var="domain=${{ github.event.client_payload.domain }}"
+          -var="first_name=${{ github.event.client_payload.first_name }}" \
+          -var="sur_name=${{ github.event.client_payload.sur_name }}" \
+          -var="domain=${{ github.event.client_payload.domain }}" \
+          -var="manager_upn=${{ github.event.client_payload.manager_upn }}"
 
       - name: Output results
         run: terraform output -json > tf_output.json
