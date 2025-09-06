@@ -13,6 +13,24 @@ variable "sur_name" {
   description = "The surname of the user."
 }
 
+variable "department" {
+  type        = string
+  description = "The department of the new user."
+  default = null
+}
+
+variable "job_title" {
+  type        = string
+  description = "The job title of the new user."
+  default = null
+}
+
+variable "location" {
+  type        = string
+  description = "The location of the new user."
+  default = null
+}
+
 variable "manager_upn" {
   type        = string
   description = "The UPN of new user's manager"

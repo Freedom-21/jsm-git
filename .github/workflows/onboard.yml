@@ -29,6 +29,9 @@ jobs:
             -var="sur_name=${{ github.event.client_payload.sur_name }}" \
             -var="domain=${{ github.event.client_payload.domain }}" \
             -var="manager_upn=${{ github.event.client_payload.manager_upn }}"
+            -var="location=${{ github.event.client_payload.location }}" \
+            -var="job_title=${{ github.event.client_payload.job_title }}" \
+            -var="department=${{ github.event.client_payload.department }}"
       
       # This step will be skipped if 'apply' fails, which is what we want.
       - name: Get Terraform Output
