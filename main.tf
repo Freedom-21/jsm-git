@@ -38,7 +38,7 @@ resource "random_password" "initial" {
 resource "azuread_user" "simple_user" {
   display_name          = local.formatted_display_name
   mail_nickname         = local.base_alias
-  user_principal_name   = "${self.mail_nickname}@${var.domain}"
+  user_principal_name   = "${local.base_alias}@${var.domain}"
   password              = random_password.initial.result
   force_password_change = true
   account_enabled       = true
