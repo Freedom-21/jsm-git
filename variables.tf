@@ -8,9 +8,9 @@ variable "user_display_name" {
   description = "Full name of the user"
 }
 
-variable "user_alias" {
+variable "manager_upn" {
   type        = string
-  description = "Username before the @ (must be unique)"
+  description = "The UPN of new user's manager"
 }
 variable "client_id" {
   type        = string
