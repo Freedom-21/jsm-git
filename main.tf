@@ -17,7 +17,9 @@ provider "azuread" {
   tenant_id     = var.tenant_id
 }
 
-
+data "azuread_user" "manager" {
+  user_principal_name = var.manager_upn
+}
 
 
 resource "random_password" "initial" {
