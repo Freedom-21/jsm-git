@@ -3,11 +3,6 @@ variable "domain" {
   default     = "yenesewfreedom8gmail.onmicrosoft.com"
 }
 
-variable "user_display_name" {
-  type        = string
-  description = "Full name of the user"
-}
-
 variable "first_name" {
   type        = string
   description = "The first name of the user."
