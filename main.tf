@@ -39,6 +39,9 @@ resource "azuread_user" "simple_user" {
   display_name          = local.formatted_display_name
   mail_nickname         = local.base_alias
   user_principal_name   = "${local.base_alias}@${var.domain}"
+  department            = var.department != "" ? var.department : null
+  job_title             = var.job_title != "" ? var.job_title : null
+  usage_location        = var.location != "" ? var.location : null
   password              = random_password.initial.result
   force_password_change = true
   account_enabled       = true
