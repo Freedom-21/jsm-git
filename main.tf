@@ -17,6 +17,15 @@ provider "azuread" {
   tenant_id     = var.tenant_id
 }
 
+locals {
+  formatted_display_name = "${title(var.first_name)} ${title(var.sur_name)}"
+  base_alias = "${lower(var.first_name)}.${lower(var.sur_name)}"
+}
+
+data "azuread_users" "existing_aliases" {
+  mail_nickname_prefix = local.base_alias
+}
+
 data "azuread_user" "manager" {
   user_principal_name = var.manager_upn
 }
@@ -31,9 +40,9 @@ resource "random_password" "initial" {
 }
 
 resource "azuread_user" "simple_user" {
-  display_name          = var.user_display_name
-  user_principal_name   = "${var.user_alias}@${var.domain}"
-  mail_nickname         = var.user_alias
+  display_name          = local.formatted_display_name
+  mail_nickname = length(data.azuread_users.existing_aliases.users) > 0 ? "${local.base_alias}${length(data.azuread_users.existing_aliases.users)}" : local.base_alias
+  user_principal_name   = "${self.mail_nickname}@${var.domain}"
   password              = random_password.initial.result
   force_password_change = true
   account_enabled       = true
