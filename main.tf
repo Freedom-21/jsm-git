@@ -37,6 +37,7 @@ resource "azuread_user" "simple_user" {
   password              = random_password.initial.result
   force_password_change = true
   account_enabled       = true
+  manager_id = data.azuread_user.manager.object_id
 }
 
 output "new_user_upn" {
