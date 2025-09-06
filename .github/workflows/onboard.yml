@@ -3,12 +3,9 @@ name: Provision Azure User
 on:
   repository_dispatch:
     types: [onboard_user]
-
 jobs:
   provision:
     runs-on: ubuntu-latest
-    # REMOVED a single line here: "environment: dev"
-    # This job will now use Repository Secrets by default.
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -17,67 +14,74 @@ jobs:
         uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
+        id: init # Give step an ID
         run: terraform init
 
       - name: Terraform Apply
-        # This is the most reliable way to pass secrets to Terraform.
-        # It reads them from the repository secrets and sets them as 
-        # environment variables for this step.
+        id: apply # Give step an ID to check its outcome later
         env:
           TF_VAR_client_id: ${{ secrets.AZURE_CLIENT_ID }}
           TF_VAR_client_secret: ${{ secrets.AZURE_CLIENT_SECRET }}
           TF_VAR_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
         run: |
-          # The command remains clean, with credentials handled by the 'env' block.
           terraform apply -auto-approve \
-          -var="first_name=${{ github.event.client_payload.first_name }}" \
-          -var="sur_name=${{ github.event.client_payload.sur_name }}" \
-          -var="domain=${{ github.event.client_payload.domain }}" \
-          -var="manager_upn=${{ github.event.client_payload.manager_upn }}"
-
-      - name: Output results
+            -var="first_name=${{ github.event.client_payload.first_name }}" \
+            -var="sur_name=${{ github.event.client_payload.sur_name }}" \
+            -var="domain=${{ github.event.client_payload.domain }}" \
+            -var="manager_upn=${{ github.event.client_payload.manager_upn }}"
+      
+      # This step will be skipped if 'apply' fails, which is what we want.
+      - name: Get Terraform Output
+        id: output
         run: terraform output -json > tf_output.json
 
-      - name: Post back to Jira
+      - name: Post Status to Jira
+        # This step ALWAYS runs, regardless of whether the steps above succeeded or failed.
+        if: always()
         run: |
-          # Get the UPN and temp password
-          UPN=$(jq -r '.new_user_upn.value' tf_output.json)
-          TEMP_PASS=$(jq -r '.temporary_password.value' tf_output.json)
-          
-          # Construct the Atlassian Document Format (ADF) JSON payload using jq
-          # NOTE: The extra comma after the closing brace has been removed.
-          JSON_PAYLOAD=$(jq -n \
-            --arg upn "$UPN" \
-            --arg temp_pass "$TEMP_PASS" \
-            '{
-              "body": {
-                "type": "doc",
-                "version": 1,
-                "content": [
-                  {
-                    "type": "paragraph",
-                    "content": [
-                      {
-                        "text": "✅ User Created: \($upn)",
-                        "type": "text"
-                      }
-                    ]
-                  },
-                  {
-                    "type": "paragraph",
-                    "content": [
-                      {
-                        "text": "🔑 Temporary Password: \($temp_pass)",
-                        "type": "text"
-                      }
-                    ]
-                  }
-                ]
-              }
-            }'
-          )
-          
-          # Use the new JSON payload in the curl command
+          # Check the outcome of the 'apply' step
+          if [[ "${{ steps.apply.outcome }}" == "success" ]]; then
+            # --- SUCCESS PATH ---
+            echo "Workflow succeeded. Posting success message to Jira."
+            UPN=$(jq -r '.new_user_upn.value' tf_output.json)
+            TEMP_PASS=$(jq -r '.temporary_password.value' tf_output.json)
+            
+            JSON_PAYLOAD=$(jq -n \
+              --arg upn "$UPN" \
+              --arg temp_pass "$TEMP_PASS" \
+              '{
+                "body": {
+                  "type": "doc", "version": 1,
+                  "content": [
+                    { "type": "paragraph", "content": [ { "text": "✅ User Created: \($upn)", "type": "text" } ] },
+                    { "type": "paragraph", "content": [ { "text": "🔑 Temporary Password: \($temp_pass)", "type": "text" } ] }
+                  ]
+                }
+              }'
+            )
+          else
+            # --- FAILURE PATH ---
+            echo "Workflow failed. Posting error message to Jira."
+            RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            
+            JSON_PAYLOAD=$(jq -n \
+              --arg url "$RUN_URL" \
+              '{
+                "body": {
+                  "type": "doc", "version": 1,
+                  "content": [
+                    { "type": "paragraph", "content": [ { "text": "❌ ERROR: The user provisioning workflow failed.", "type": "text" } ] },
+                    { "type": "paragraph", "content": [
+                      { "text": "Please review the execution logs for details: ", "type": "text" },
+                      { "text": "View Failed Run", "type": "text", "marks": [ { "type": "link", "attrs": { "href": $url } } ] }
+                    ] }
+                  ]
+                }
+              }'
+            )
+          fi
+
+          # Send the determined payload to Jira
           curl -u ${{ secrets.JIRA_USER_EMAIL }}:${{ secrets.JIRA_API_TOKEN }} \
             -X POST \
             --data "$JSON_PAYLOAD" \
