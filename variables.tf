@@ -8,6 +8,16 @@ variable "user_display_name" {
   description = "Full name of the user"
 }
 
+variable "first_name" {
+  type        = string
+  description = "The first name of the user."
+}
+
+variable "sur_name" {
+  type        = string
+  description = "The surname of the user."
+}
+
 variable "manager_upn" {
   type        = string
   description = "The UPN of new user's manager"
